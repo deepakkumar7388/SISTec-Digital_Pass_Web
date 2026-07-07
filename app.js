@@ -29,20 +29,22 @@ function setupMobileNav() {
   if (toggle && navMenu) {
     toggle.addEventListener('click', () => {
       navMenu.classList.toggle('active');
+      toggle.classList.toggle('active');
     });
 
-    // Toggle active state on click
+    // Toggle active state on click & close mobile drawer
     const navLinks = navMenu.querySelectorAll('a');
     navLinks.forEach(link => {
       link.addEventListener('click', () => {
         navLinks.forEach(l => l.classList.remove('active'));
         link.classList.add('active');
         navMenu.classList.remove('active');
+        toggle.classList.remove('active');
       });
     });
   }
 
-  // Navbar scroll background change
+  // Navbar scroll background change & ScrollSpy active link updates
   window.addEventListener('scroll', () => {
     const navbar = document.querySelector('.navbar');
     if (navbar) {
@@ -51,6 +53,31 @@ function setupMobileNav() {
       } else {
         navbar.classList.remove('navbar-scrolled');
       }
+    }
+
+    // ScrollSpy implementation
+    const sections = document.querySelectorAll('section[id]');
+    const scrollPosition = window.scrollY + 120; // Offset for navbar height
+
+    sections.forEach(section => {
+      const sectionHeight = section.offsetHeight;
+      const sectionTop = section.offsetTop;
+      const sectionId = section.getAttribute('id');
+      const activeLink = document.querySelector(`.nav-menu a[href="#${sectionId}"]`);
+
+      if (activeLink) {
+        if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+          document.querySelectorAll('.nav-menu a').forEach(l => l.classList.remove('active'));
+          activeLink.classList.add('active');
+        }
+      }
+    });
+
+    // Reset active state when scrolled to the very top (Hero section has no id tag match sometimes)
+    if (window.scrollY < 200) {
+      document.querySelectorAll('.nav-menu a').forEach(l => l.classList.remove('active'));
+      const homeLink = document.querySelector('.nav-menu a[href="#"]');
+      if (homeLink) homeLink.classList.add('active');
     }
   });
 }
@@ -646,7 +673,7 @@ function playSuccessChime() {
   }
 }
 
-// --- 14. CARD CURSOR SPOTLIGHT EFFECT ---
+// --- 14. CARD CURSOR SPOTLIGHT EFFECT & DEVELOPER CARD TOGGLES ---
 function initCardSpotlight() {
   const cards = document.querySelectorAll('.glass-card, .flow-card, .simulator-card-left, .simulator-card-right, .developer-card');
   cards.forEach(card => {
@@ -657,6 +684,73 @@ function initCardSpotlight() {
       card.style.setProperty('--mouse-x', `${x}px`);
       card.style.setProperty('--mouse-y', `${y}px`);
     });
+  });
+
+  // Handle Developer Card Clicks - Lightbox Modal Popup
+  const devCards = document.querySelectorAll('.developer-card');
+  
+  // Create Modal elements dynamically
+  const modalOverlay = document.createElement('div');
+  modalOverlay.className = 'dev-modal-overlay';
+  modalOverlay.innerHTML = `
+    <div class="dev-modal-container">
+      <button class="dev-modal-close" aria-label="Close details">×</button>
+      <div class="dev-modal-left">
+        <img class="dev-modal-img" src="" alt="">
+      </div>
+      <div class="dev-modal-right">
+        <h3 class="dev-modal-name"></h3>
+        <span class="dev-modal-role"></span>
+        <p class="dev-modal-desc"></p>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modalOverlay);
+
+  const modalImg = modalOverlay.querySelector('.dev-modal-img');
+  const modalName = modalOverlay.querySelector('.dev-modal-name');
+  const modalRole = modalOverlay.querySelector('.dev-modal-role');
+  const modalDesc = modalOverlay.querySelector('.dev-modal-desc');
+  const closeBtn = modalOverlay.querySelector('.dev-modal-close');
+
+  devCards.forEach(card => {
+    card.addEventListener('click', (e) => {
+      e.stopPropagation();
+      
+      // Get data from clicked card
+      const img = card.querySelector('.developer-card-img');
+      const name = card.querySelector('.developer-card-name').textContent;
+      const role = card.querySelector('.developer-card-role').textContent;
+      const desc = card.querySelector('.developer-card-desc').textContent;
+
+      // Populate Modal details
+      modalImg.src = img.src;
+      modalImg.alt = img.alt;
+      modalName.textContent = name;
+      modalRole.textContent = role;
+      modalDesc.textContent = desc;
+
+      // Open Modal
+      modalOverlay.classList.add('active');
+    });
+  });
+
+  // Close triggers
+  closeBtn.addEventListener('click', () => {
+    modalOverlay.classList.remove('active');
+  });
+
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) {
+      modalOverlay.classList.remove('active');
+    }
+  });
+
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+      modalOverlay.classList.remove('active');
+    }
   });
 }
 
