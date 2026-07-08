@@ -2135,7 +2135,7 @@ p {
 
 .role-tab-label {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 500;
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
