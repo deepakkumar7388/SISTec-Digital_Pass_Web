@@ -2074,8 +2074,28 @@ p {
 @media (max-width: 768px) {
   .role-tabs-bar {
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    margin-bottom: 40px;
+    gap: 12px;
+    margin-bottom: 32px;
+    max-width: 320px;
+  }
+
+  .role-tab-btn {
+    padding: 8px 4px;
+    gap: 8px;
+  }
+
+  .role-tab-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .role-tab-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .role-tab-label {
+    font-size: 9px;
   }
 }
 
