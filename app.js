@@ -44,42 +44,60 @@ function setupMobileNav() {
     });
   }
 
-  // Navbar scroll background change & ScrollSpy active link updates
-  window.addEventListener('scroll', () => {
-    const navbar = document.querySelector('.navbar');
-    if (navbar) {
+  // Throttled navbar scroll background change
+  const navbar = document.querySelector('.navbar');
+  if (navbar) {
+    let scrolled = false;
+    window.addEventListener('scroll', () => {
       if (window.scrollY > 40) {
-        navbar.classList.add('navbar-scrolled');
+        if (!scrolled) {
+          navbar.classList.add('navbar-scrolled');
+          scrolled = true;
+        }
       } else {
-        navbar.classList.remove('navbar-scrolled');
-      }
-    }
-
-    // ScrollSpy implementation
-    const sections = document.querySelectorAll('section[id]');
-    const scrollPosition = window.scrollY + 120; // Offset for navbar height
-
-    sections.forEach(section => {
-      const sectionHeight = section.offsetHeight;
-      const sectionTop = section.offsetTop;
-      const sectionId = section.getAttribute('id');
-      const activeLink = document.querySelector(`.nav-menu a[href="#${sectionId}"]`);
-
-      if (activeLink) {
-        if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
-          document.querySelectorAll('.nav-menu a').forEach(l => l.classList.remove('active'));
-          activeLink.classList.add('active');
+        if (scrolled) {
+          navbar.classList.remove('navbar-scrolled');
+          scrolled = false;
         }
       }
-    });
+    }, { passive: true });
+  }
 
-    // Reset active state when scrolled to the very top (Hero section has no id tag match sometimes)
-    if (window.scrollY < 200) {
-      document.querySelectorAll('.nav-menu a').forEach(l => l.classList.remove('active'));
-      const homeLink = document.querySelector('.nav-menu a[href="#"]');
-      if (homeLink) homeLink.classList.add('active');
-    }
-  });
+  // Highly performant ScrollSpy implementation using IntersectionObserver
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-menu a');
+
+  if (typeof IntersectionObserver !== 'undefined' && sections.length > 0) {
+    const observerOptions = {
+      root: null,
+      rootMargin: '-30% 0px -65% 0px', // Matches the active viewing region of viewport
+      threshold: 0
+    };
+
+    const spyObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const sectionId = entry.target.getAttribute('id');
+          const activeLink = document.querySelector(`.nav-menu a[href="#${sectionId}"]`);
+          if (activeLink) {
+            navLinks.forEach(l => l.classList.remove('active'));
+            activeLink.classList.add('active');
+          }
+        }
+      });
+    }, observerOptions);
+
+    sections.forEach(section => spyObserver.observe(section));
+
+    // Reset to Home link when at the very top of the page
+    window.addEventListener('scroll', () => {
+      if (window.scrollY < 120) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const homeLink = document.querySelector('.nav-menu a[href="#"]');
+        if (homeLink) homeLink.classList.add('active');
+      }
+    }, { passive: true });
+  }
 }
 
 // --- 2. INTERACTIVE SCREEN SHOWCASE (TAB ENGINE) ---
@@ -676,15 +694,23 @@ function playSuccessChime() {
 // --- 14. CARD CURSOR SPOTLIGHT EFFECT & DEVELOPER CARD TOGGLES ---
 function initCardSpotlight() {
   const cards = document.querySelectorAll('.glass-card, .flow-card, .simulator-card-left, .simulator-card-right, .developer-card');
-  cards.forEach(card => {
-    card.addEventListener('mousemove', (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      card.style.setProperty('--mouse-x', `${x}px`);
-      card.style.setProperty('--mouse-y', `${y}px`);
+  
+  // Only enable spotlight on devices that support hover (desktops/laptops with mouse pointer)
+  if (window.matchMedia('(hover: hover)').matches) {
+    cards.forEach(card => {
+      let frame;
+      card.addEventListener('mousemove', (e) => {
+        if (frame) cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => {
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          card.style.setProperty('--mouse-x', `${x}px`);
+          card.style.setProperty('--mouse-y', `${y}px`);
+        });
+      }, { passive: true });
     });
-  });
+  }
 
   // Handle Developer Card Clicks - Lightbox Modal Popup
   const devCards = document.querySelectorAll('.developer-card');
@@ -762,13 +788,20 @@ function initScrollToTop() {
   btn.setAttribute('aria-label', 'Scroll to top');
   document.body.appendChild(btn);
 
+  let isVisible = false;
   window.addEventListener('scroll', () => {
     if (window.scrollY > 400) {
-      btn.classList.add('visible');
+      if (!isVisible) {
+        btn.classList.add('visible');
+        isVisible = true;
+      }
     } else {
-      btn.classList.remove('visible');
+      if (isVisible) {
+        btn.classList.remove('visible');
+        isVisible = false;
+      }
     }
-  });
+  }, { passive: true });
 
   btn.addEventListener('click', () => {
     window.scrollTo({
